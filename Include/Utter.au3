@@ -92,8 +92,9 @@ Any update will be notified and released on the forum.
 
 Version .........: 3.0.0.1
 Author ..........: SuryaSaradhi.B
-Modified ........: 24/08/2015
-#ce ----------------------------------------------------------------------------
+Modified ........: mLipok
+Modified ........: 24/01/2021
+#ce --------------------------------------------------------------------------
 
 ; Script Start - Add your code below here
 #include-once
@@ -115,6 +116,26 @@ Global Const $SVSFNLPSpeakPunc = 64
 Global $UTTER_MIC_STR[8]
 Global $oMyError ;Error registration variable
 
+Global $hk = 0
+Global $h_Context = 0
+Global $h_Recognizer = 0
+Global $oRecoContext = 0
+Global $oVBS = 0
+Global $oGrammar = 0
+Global $oTopRule = 0
+Global $oWordsRule = 0
+Global $oAfterCmdState = 0
+Global $h_Category = 0
+Global $h_Token = 0
+Global $oNothing = 0
+Global $h_ObjectEventsm
+Global $h_Contextm
+Global $h_Recognizerm
+Global $h_Grammarm
+Global $h_Categorym
+Global $h_Tokenm
+Global $i_ObjInitializedm
+
 #Region :User-Functions
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Speech_StartEngine()
@@ -130,30 +151,30 @@ Global $oMyError ;Error registration variable
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Speech_StartEngine()
-$h_Context = ObjCreate("SAPI.SpInProcRecoContext")
-$comer = @error
-$h_Recognizer = $h_Context.Recognizer
-;Global $h_Grammar = $h_Context.CreateGrammar(1)
-$oRecoContext = $h_Context ;ObjCreate('SAPI.SpSharedRecoContext')
-$oVBS = ObjCreate("ScriptControl")
-$oVBS.Language = "VBScript"
-$oNothing = $oVBS.Eval("Nothing")
-$oRecoContext.CreateGrammar(0)
-$oGrammar = $oRecoContext.CreateGrammar()
-$h_Grammar = $oGrammar
-$oMyError = ObjEvent("AutoIt.Error","MyErrFunc")
-_nullifyvariable()
-Global $array[8]
-$array[0] = $oRecoContext ;spinprorecocontext
-$array[1] = $h_Recognizer ;main recognizer
-$array[2] = 'null' ;Null handler
-$array[3] = $oVBS ;Script
-$array[4] = $oNothing ;Nothing
-$array[5] = $h_Grammar ;Grammar verbs
-$array[6] = "Error:" &$comer ;error notifications
-$array[7] = $oMyError
-Return $array
-EndFunc
+	$h_Context = ObjCreate("SAPI.SpInProcRecoContext")
+	Local $comer = @error
+	$h_Recognizer = $h_Context.Recognizer
+	;Global $h_Grammar = $h_Context.CreateGrammar(1)
+	$oRecoContext = $h_Context ;ObjCreate('SAPI.SpSharedRecoContext')
+	$oVBS = ObjCreate("ScriptControl")
+	$oVBS.Language = "VBScript"
+	Local $oNothing = $oVBS.Eval("Nothing")
+	$oRecoContext.CreateGrammar(0)
+	$oGrammar = $oRecoContext.CreateGrammar()
+	Local $h_Grammar = $oGrammar
+	$oMyError = ObjEvent("AutoIt.Error", "MyErrFunc")
+	_nullifyvariable()
+	Local  $array[8]
+	$array[0] = $oRecoContext ;spinprorecocontext
+	$array[1] = $h_Recognizer ;main recognizer
+	$array[2] = 'null' ;Null handler
+	$array[3] = $oVBS ;Script
+	$array[4] = $oNothing ;Nothing
+	$array[5] = $h_Grammar ;Grammar verbs
+	$array[6] = "Error:" & $comer ;error notifications
+	$array[7] = $oMyError
+	Return $array
+EndFunc   ;==>_Utter_Speech_StartEngine
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Speech_CreateGrammar($ark,$gramr="",$trn="")
@@ -176,31 +197,31 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_Speech_CreateGrammar(ByRef $ark,$gramr,$trn="")
-;run a check function
-_CheckObject($ark)
-$ftr = _checkgrammar($gramr)
-$btr = _checkgrammar($trn)
-$oGrammar = $ark[5]
-$oTopRule = $oGrammar.Rules.Add('RUN', 1, 0)
-$oWordsRule = $oGrammar.Rules.Add('WORDS', BitOR(1, 32), 1)
-$oAfterCmdState = $oTopRule.AddState()
-For $i = 0 To UBound ($ftr)-1
-$oTopRule.InitialState.AddWordTransition($oAfterCmdState, $ftr[$i])
-$oAfterCmdState.AddRuleTransition($ark[4], $oWordsRule)
-Next
-For $i = 0 To UBound ($btr) -1
-$oWordsRule.InitialState.AddWordTransition($ark[4], $btr[$i])
-Next
+Func _Utter_Speech_CreateGrammar(ByRef $ark, $gramr, $trn = "")
+	;run a check function
+	_CheckObject($ark)
+	Local $ftr = _checkgrammar($gramr)
+	Local $btr = _checkgrammar($trn)
+	Local $oGrammar = $ark[5]
+	Local $oTopRule = $oGrammar.Rules.Add('RUN', 1, 0)
+	Local $oWordsRule = $oGrammar.Rules.Add('WORDS', BitOR(1, 32), 1)
+	Local $oAfterCmdState = $oTopRule.AddState()
+	For $i = 0 To UBound($ftr) - 1
+		$oTopRule.InitialState.AddWordTransition($oAfterCmdState, $ftr[$i])
+		$oAfterCmdState.AddRuleTransition($ark[4], $oWordsRule)
+	Next
+	For $i = 0 To UBound($btr) - 1
+		$oWordsRule.InitialState.AddWordTransition($ark[4], $btr[$i])
+	Next
 ;~ $oWordsRule.InitialState.AddWordTransition($oNothing, 'whatever')
-$oGrammar.Rules.Commit()
-$oGrammar.CmdSetRuleState('RUN', 1)
-Local $array[3]
-$array[0] = $oTopRule
-$array[1] = $oAfterCmdState
-$array[2] = $oWordsRule
-Return $array[2]
-EndFunc
+	$oGrammar.Rules.Commit()
+	$oGrammar.CmdSetRuleState('RUN', 1)
+	Local $array[3]
+	$array[0] = $oTopRule
+	$array[1] = $oAfterCmdState
+	$array[2] = $oWordsRule
+	Return $array[2]
+EndFunc   ;==>_Utter_Speech_CreateGrammar
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Speech_CreateTokens($ark)
@@ -217,17 +238,17 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Speech_CreateTokens(ByRef $ark)
-$h_Recognizer = $ark[1]
-$h_Category = ObjCreate("SAPI.SpObjectTokenCategory")
-$h_Category.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
-$h_Token = ObjCreate("SAPI.SpObjectToken")
-$h_Token.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
-$h_Recognizer.AudioInput = $h_Token
-Local $array[2]
-$array[0] = $h_Category
-$array[1] = $h_Token
-Return $array[1]
-EndFunc
+	Local $h_Recognizer = $ark[1]
+	Local $h_Category = ObjCreate("SAPI.SpObjectTokenCategory")
+	$h_Category.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
+	Local $h_Token = ObjCreate("SAPI.SpObjectToken")
+	$h_Token.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
+	$h_Recognizer.AudioInput = $h_Token
+	Local $array[2]
+	$array[0] = $h_Category
+	$array[1] = $h_Token
+	Return $array[1]
+EndFunc   ;==>_Utter_Speech_CreateTokens
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Speech_GrammarRecognize($ark,$grm="",$delay=1000,$func=False)
@@ -262,15 +283,15 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_Speech_GrammarRecognize(ByRef $ark,$grm="",$delay=1000,$func="")
-$hk = ObjEvent($ark[0], 'RecoContext_')
-$UTTER_SPEECH_ERROR = @error
-$UTTER_SPEECH_VAR = $grm
-$UTTER_SPEECH_FUNC = ""
-If Not $func = "" Then $UTTER_SPEECH_FUNC = $func
-Sleep ($delay)
-Return $hk
-EndFunc
+Func _Utter_Speech_GrammarRecognize(ByRef $ark, $grm = "", $delay = 1000, $func = "")
+	Local $hk = ObjEvent($ark[0], 'RecoContext_')
+	$UTTER_SPEECH_ERROR = @error
+	$UTTER_SPEECH_VAR = $grm
+	$UTTER_SPEECH_FUNC = ""
+	If Not $func = "" Then $UTTER_SPEECH_FUNC = $func
+	Sleep($delay)
+	Return $hk
+EndFunc   ;==>_Utter_Speech_GrammarRecognize
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Speech_Pass($in = 0)
@@ -285,14 +306,14 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Speech_Pass($in = 0)
-If $in = 0 Then
-   $UTTER_SPEECH_PASS = 0
-ElseIf $in = 1 Then
-   $UTTER_SPEECH_PASS = 1
-Else
-   $UTTER_SPEECH_PASS = 1
-EndIf
-EndFunc
+	If $in = 0 Then
+		$UTTER_SPEECH_PASS = 0
+	ElseIf $in = 1 Then
+		$UTTER_SPEECH_PASS = 1
+	Else
+		$UTTER_SPEECH_PASS = 1
+	EndIf
+EndFunc   ;==>_Utter_Speech_Pass
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Speech_ShutdownEngine()
@@ -307,22 +328,21 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Speech_ShutdownEngine()
-_nullifyvariable()
- $hk = 0
- $h_Context = 0
- $h_Recognizer = 0
- $oRecoContext = 0
- $oVBS = 0
- $oGrammar = 0
- $oMyError = 0
- $oTopRule = 0
- $oWordsRule = 0
- $oAfterCmdState = 0
- $h_Category = 0
- $h_Token = 0
- $hk = 0
- $oNothing = 0
-EndFunc
+	_nullifyvariable()
+	$hk = 0
+	$h_Context = 0
+	$h_Recognizer = 0
+	$oRecoContext = 0
+	$oVBS = 0
+	$oGrammar = 0
+	$oMyError = 0
+	$oTopRule = 0
+	$oWordsRule = 0
+	$oAfterCmdState = 0
+	$h_Category = 0
+	$h_Token = 0
+	$oNothing = 0
+EndFunc   ;==>_Utter_Speech_ShutdownEngine
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Speech_CreateFreeGrammar($delay = 3000,$func = "")
@@ -350,34 +370,34 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_Speech_CreateFreeGrammar($delay = 3000,$func = "")
-_nullifyvariable()
-If Not $func = "" Then $UTTER_SPEECH_FUNC = $func
- $h_Contextm = ObjCreate("SAPI.SpInProcRecoContext")
- $h_Recognizerm = $h_Contextm.Recognizer
- $h_Grammarm = $h_Contextm.CreateGrammar(1)
-$h_Grammarm.Dictationload
-$h_Grammarm.DictationSetState(1)
+Func _Utter_Speech_CreateFreeGrammar($delay = 3000, $func = "")
+	_nullifyvariable()
+	If Not $func = "" Then $UTTER_SPEECH_FUNC = $func
+	$h_Contextm = ObjCreate("SAPI.SpInProcRecoContext")
+	$h_Recognizerm = $h_Contextm.Recognizer
+	$h_Grammarm = $h_Contextm.CreateGrammar(1)
+	$h_Grammarm.Dictationload
+	$h_Grammarm.DictationSetState(1)
 
-;Create a token for the default audio input device and set it
- $h_Categorym = ObjCreate("SAPI.SpObjectTokenCategory")
-$h_Categorym.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
- $h_Tokenm = ObjCreate("SAPI.SpObjectToken")
-$h_Tokenm.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
-$h_Recognizerm.AudioInput = $h_Tokenm
+	;Create a token for the default audio input device and set it
+	$h_Categorym = ObjCreate("SAPI.SpObjectTokenCategory")
+	$h_Categorym.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
+	$h_Tokenm = ObjCreate("SAPI.SpObjectToken")
+	$h_Tokenm.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
+	$h_Recognizerm.AudioInput = $h_Tokenm
 
- $i_ObjInitializedm = 0
+	$i_ObjInitializedm = 0
 
- $h_ObjectEventsm = ObjEvent($h_Contextm, "SpRecEvent_")
-If @error Then
-    $i_ObjInitializedm = 0
-Else
-    $i_ObjInitializedm = 1
- EndIf
-$UTTER_SPEECH_ERROR = $i_ObjInitializedm
- Sleep ($delay)
- Return $i_ObjInitializedm
-EndFunc
+	$h_ObjectEventsm = ObjEvent($h_Contextm, "SpRecEvent_")
+	If @error Then
+		$i_ObjInitializedm = 0
+	Else
+		$i_ObjInitializedm = 1
+	EndIf
+	$UTTER_SPEECH_ERROR = $i_ObjInitializedm
+	Sleep($delay)
+	Return $i_ObjInitializedm
+EndFunc   ;==>_Utter_Speech_CreateFreeGrammar
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Speech_FreegrammarPass($in = 0)
@@ -392,14 +412,14 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Speech_FreegrammarPass($in = 0)
-If $in = 0 Then
-   $UTTER_SPEECH_PASS = 0
-ElseIf $in = 1 Then
-   $UTTER_SPEECH_PASS = 1
-Else
-   $UTTER_SPEECH_PASS = 1
-EndIf
-EndFunc
+	If $in = 0 Then
+		$UTTER_SPEECH_PASS = 0
+	ElseIf $in = 1 Then
+		$UTTER_SPEECH_PASS = 1
+	Else
+		$UTTER_SPEECH_PASS = 1
+	EndIf
+EndFunc   ;==>_Utter_Speech_FreegrammarPass
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Speech_ShutdownFreeGrammar()
@@ -414,15 +434,15 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Speech_ShutdownFreeGrammar()
-_nullifyvariable()
- $h_Contextm = 0
- $h_Recognizerm = 0
- $h_Grammarm = 0
- $h_Categorym = 0
- $h_Tokenm = 0
- $i_ObjInitializedm = 0
- $h_ObjectEventsm = 0
-EndFunc
+	_nullifyvariable()
+	$h_Contextm = 0
+	$h_Recognizerm = 0
+	$h_Grammarm = 0
+	$h_Categorym = 0
+	$h_Tokenm = 0
+	$i_ObjInitializedm = 0
+	$h_ObjectEventsm = 0
+EndFunc   ;==>_Utter_Speech_ShutdownFreeGrammar
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_Shutdown()
@@ -436,8 +456,8 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Voice_Shutdown(ByRef $ark)
- $ark = 0
-EndFunc
+	$ark = 0
+EndFunc   ;==>_Utter_Voice_Shutdown
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_Setvolume(ByRef $ark,$val)
@@ -451,10 +471,10 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_Voice_Setvolume(ByRef $ark,$val)
-$oSpeech = $ark
-$oSpeech.Volume = $val
-EndFunc
+Func _Utter_Voice_Setvolume(ByRef $ark, $val)
+	Local $oSpeech = $ark
+	$oSpeech.Volume = $val
+EndFunc   ;==>_Utter_Voice_Setvolume
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_GetCurrentvoice(ByRef $ark)
@@ -468,10 +488,10 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Voice_GetCurrentvoice(ByRef $ark)
-$hl = $ark.getvoices.item (0)
-$ml = $hl.GetDescription()
-Return $ml
-EndFunc
+	Local $hl = $ark.getvoices.item(0)
+	Local $ml = $hl.GetDescription()
+	Return $ml
+EndFunc   ;==>_Utter_Voice_GetCurrentvoice
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_Setvoice (ByRef $Object, $sVoiceName)
@@ -486,7 +506,7 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_Voice_Setvoice (ByRef $Object, $sVoiceName)
+Func _Utter_Voice_Setvoice(ByRef $Object, $sVoiceName)
 	Local $VoiceNames, $VoiceGroup = $Object.GetVoices
 	For $VoiceNames In $VoiceGroup
 		If $VoiceNames.GetDescription() = $sVoiceName Then
@@ -494,7 +514,7 @@ Func _Utter_Voice_Setvoice (ByRef $Object, $sVoiceName)
 			Return
 		EndIf
 	Next
-EndFunc
+EndFunc   ;==>_Utter_Voice_Setvoice
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_Getvoice(ByRef $ark,$bReturn = True)
@@ -512,15 +532,15 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_Voice_Getvoice (ByRef $ark,$bReturn = True)
-$oSpeech = $ark
-Local $sVoices, $VoiceGroup = $oSpeech.GetVoices
+Func _Utter_Voice_Getvoice(ByRef $ark, $bReturn = True)
+	Local $oSpeech = $ark
+	Local $sVoices, $VoiceGroup = $oSpeech.GetVoices
 	For $Voices In $VoiceGroup
 		$sVoices &= $Voices.GetDescription() & '|'
-	 Next
+	Next
 	If $bReturn Then Return StringSplit(StringTrimRight($sVoices, 1), '|', 2)
 	Return StringTrimRight($sVoices, 1)
-EndFunc
+EndFunc   ;==>_Utter_Voice_Getvoice
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_StartEngine()
@@ -534,8 +554,8 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Voice_StartEngine()
-    Return ObjCreate ("SAPI.spVoice")
-EndFunc
+	Return ObjCreate("SAPI.spVoice")
+EndFunc   ;==>_Utter_Voice_StartEngine
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_SetRate(ByRef $ark,$val)
@@ -549,10 +569,10 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_Voice_SetRate(ByRef $ark,$val)
-$oSpeech = $ark
-$oSpeech.Rate = $val
-EndFunc
+Func _Utter_Voice_SetRate(ByRef $ark, $val)
+	Local $oSpeech = $ark
+	$oSpeech.Rate = $val
+EndFunc   ;==>_Utter_Voice_SetRate
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_Speak(ByRef $ark,$text)
@@ -570,15 +590,12 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_Voice_Speak(ByRef $ark,$text,$resum = False)
-$oSpeech = $ark
-If Not $resum Then
-   $okr = 11
-Else
-   $okr = 0
-EndIf
-$oSpeech.Speak($text,$okr)
-EndFunc
+Func _Utter_Voice_Speak(ByRef $ark, $text, $resum = False)
+	Local $oSpeech = $ark
+	Local $okr = 0
+	If Not $resum Then $okr = 11
+	$oSpeech.Speak($text, $okr)
+EndFunc   ;==>_Utter_Voice_Speak
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_IsSpeaking(ByRef $ark)
@@ -593,16 +610,16 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_Voice_IsSpeaking(ByRef $ark)
-$oSpeech = $ark
-$stt = $oSpeech.Status.RunningState()
-If $stt = 1 Then
-   Return False
-ElseIf $stt = 2 Then
-   Return True
-Else
-   Return False
-EndIf
-EndFunc
+	Local $oSpeech = $ark
+	Local $stt = $oSpeech.Status.RunningState()
+	If $stt = 1 Then
+		Return False
+	ElseIf $stt = 2 Then
+		Return True
+	Else
+		Return False
+	EndIf
+EndFunc   ;==>_Utter_Voice_IsSpeaking
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_Voice_Transcribe(ByRef $ark,$file,$txt,$comp = 1,$lame="")
@@ -627,36 +644,33 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_Voice_Transcribe(ByRef $ark,$file,$txt,$comp = 1,$lame="")
-$ext = _Fetchextension($file)
-If $ext=0 Or $ext = 2 Then
-$oStream = ObjCreate ( "SAPI.SpFileStream" )
-$ark.AllowAudioOutputFormatChangesOnNextSet = True
-$oStream.Format.Type = $SAFT48kHz16BitMono
-If $ext = 2 Then
-   $mh = ".wav"
-Else
-   $mh = ""
-EndIf
-$oStream.Open ( $file &$mh, $SSFMCreateForWrite, True )
-$ark.AudioOutputStream = $oStream
-$ark.Speak ( $txt, $SVSFPurgeBeforeSpeak + $SVSFNLPSpeakPunc )
-$oStream.Close ( )
-$ark.AudioOutput = $ark.GetAudioOutputs ( '' ).Item ( 0 )
-If $ext &$comp = 20  Then
-If FileExists ($lame ) Then
-RunWait ( '"' &$lame  &'"' &' -q0 "' & $file &'.wav" "' &_getpath($file) & '.mp3"', '', @SW_HIDE)
-FileDelete ($file &".wav")
-Else
-$txt = "Utter Cant Perform conversion operation because lame directory you enterd is not valid"
-ConsoleWrite ($txt)
-EndIf
-EndIf
-Else
-   $msg = "Utter cant convert text to other formats than .wav lame is required to convert to .mp3"
-   ConsoleWrite (@CRLF &$msg)
-EndIf
-EndFunc
+Func _Utter_Voice_Transcribe(ByRef $ark, $file, $txt, $comp = 1, $lame = "")
+	Local $ext = _Fetchextension($file)
+	If $ext = 0 Or $ext = 2 Then
+		Local $oStream = ObjCreate("SAPI.SpFileStream")
+		$ark.AllowAudioOutputFormatChangesOnNextSet = True
+		$oStream.Format.Type = $SAFT48kHz16BitMono
+		Local $mh = ""
+		If $ext = 2 Then  $mh = ".wav"
+		$oStream.Open($file & $mh, $SSFMCreateForWrite, True)
+		$ark.AudioOutputStream = $oStream
+		$ark.Speak($txt, $SVSFPurgeBeforeSpeak + $SVSFNLPSpeakPunc)
+		$oStream.Close()
+		$ark.AudioOutput = $ark.GetAudioOutputs('').Item(0)
+		If $ext & $comp = 20 Then
+			If FileExists($lame) Then
+				RunWait('"' & $lame & '"' & ' -q0 "' & $file & '.wav" "' & _getpath($file) & '.mp3"', '', @SW_HIDE)
+				FileDelete($file & ".wav")
+			Else
+				$txt = "Utter Cant Perform conversion operation because lame directory you enterd is not valid"
+				ConsoleWrite($txt)
+			EndIf
+		EndIf
+	Else
+		Local $msg = "Utter cant convert text to other formats than .wav lame is required to convert to .mp3"
+		ConsoleWrite(@CRLF & $msg)
+	EndIf
+EndFunc   ;==>_Utter_Voice_Transcribe
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_DebugOut($ffl=False)
@@ -670,9 +684,9 @@ EndFunc
 ; Version .......: 3.0.0.1
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
-Func _Utter_DebugOut($ffl=False)
-$UTTER_SPEECH_DEBUG = $ffl
-EndFunc
+Func _Utter_DebugOut($ffl = False)
+	$UTTER_SPEECH_DEBUG = $ffl
+EndFunc   ;==>_Utter_DebugOut
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_GetSpeechData()
@@ -690,9 +704,9 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_GetSpeechData()
-Local $ary[1] = [RegRead(RegRead("HKEY_USERS\" & _Whoami_CurrentId() & "\Software\Microsoft\Speech\RecoProfiles\", "DefaultTokenId") & "\" & RegEnumKey(RegRead("HKEY_USERS\" & _Whoami_CurrentId() & "\Software\Microsoft\Speech\RecoProfiles\", "DefaultTokenId"), 1), "TrainingStatus"),RegRead(RegRead("HKEY_CURRENT_USER\Software\Microsoft\Speech\Voices\","DefaultTokenId"),"")]
-Return $ary
-EndFunc
+	Local $ary[1] = [RegRead(RegRead("HKEY_USERS\" & _Whoami_CurrentId() & "\Software\Microsoft\Speech\RecoProfiles\", "DefaultTokenId") & "\" & RegEnumKey(RegRead("HKEY_USERS\" & _Whoami_CurrentId() & "\Software\Microsoft\Speech\RecoProfiles\", "DefaultTokenId"), 1), "TrainingStatus"), RegRead(RegRead("HKEY_CURRENT_USER\Software\Microsoft\Speech\Voices\", "DefaultTokenId"), "")]
+	Return $ary
+EndFunc   ;==>_Utter_GetSpeechData
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_StartTraining()
@@ -707,9 +721,9 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_StartTraining()
-Local $pidpros = Run(@SystemDir &"\Speech\SpeechUX\SpeechUXWiz.exe" &' UserTraining,en-GB,HKEY_CURRENT_USER\SOFTWARE\Microsoft\Speech\RecoProfiles\Tokens\' &_StringBetween(RegRead("HKEY_CURRENT_USER\SOFTWARE\Microsoft\Speech\RecoProfiles\","DefaultTokenId"),"{","}")[0] &',656860,0,""')
-Return $pidpros
-EndFunc
+	Local $pidpros = Run(@SystemDir & "\Speech\SpeechUX\SpeechUXWiz.exe" & ' UserTraining,en-GB,HKEY_CURRENT_USER\SOFTWARE\Microsoft\Speech\RecoProfiles\Tokens\' & _StringBetween(RegRead("HKEY_CURRENT_USER\SOFTWARE\Microsoft\Speech\RecoProfiles\", "DefaultTokenId"), "{", "}")[0] & ',656860,0,""')
+	Return $pidpros
+EndFunc   ;==>_Utter_StartTraining
 
 ;#FUNCTION# ;===============================================================================
 ; Function Name:    _Utter_MIC_GetLevel()
@@ -724,22 +738,22 @@ EndFunc
 ; Modified.......: 11/04/16 by Surya
 ;============================================================================================
 Func _Utter_MIC_GetLevel()
-$UTTER_MIC_STR[0] = "new type waveaudio"
-$UTTER_MIC_STR[2] = "alias mywave"
-$UTTER_MIC_STR[4] = ""
-$UTTER_MIC_STR[5] = StringFormat("open %s %s %s", $UTTER_MIC_STR[0], $UTTER_MIC_STR[2], $UTTER_MIC_STR[4]);
-$UTTER_MIC_STR[6] = _StringRepeat(" ", 100) ; Information will return in this string
-$UTTER_MIC_STR[7] = StringLen($UTTER_MIC_STR[6])
-$mciError = _mciSendUtter($UTTER_MIC_STR[5], $UTTER_MIC_STR[6], $UTTER_MIC_STR[7], 0);
-If $mciError[0] <> 0 Then _mciSendUtterError($mciError[0])
-$UTTER_MIC_STR[1] = "mywave"
-$UTTER_MIC_STR[3] = "level"
-$UTTER_MIC_STR[4] = ""
-$UTTER_MIC_STR[5] = StringFormat("status %s %s %s", $UTTER_MIC_STR[1], $UTTER_MIC_STR[3], $UTTER_MIC_STR[4]);
-$mciError = _mciSendUtter($UTTER_MIC_STR[5], $UTTER_MIC_STR[6], $UTTER_MIC_STR[7], 0);
-If $mciError[0] <> 0 Then _mciSendUtterError($mciError[0])
-Return $mciError[2]
-EndFunc
+	$UTTER_MIC_STR[0] = "new type waveaudio"
+	$UTTER_MIC_STR[2] = "alias mywave"
+	$UTTER_MIC_STR[4] = ""
+	$UTTER_MIC_STR[5] = StringFormat("open %s %s %s", $UTTER_MIC_STR[0], $UTTER_MIC_STR[2], $UTTER_MIC_STR[4]) ;
+	$UTTER_MIC_STR[6] = _StringRepeat(" ", 100) ; Information will return in this string
+	$UTTER_MIC_STR[7] = StringLen($UTTER_MIC_STR[6])
+	Local $mciError = _mciSendUtter($UTTER_MIC_STR[5], $UTTER_MIC_STR[6], $UTTER_MIC_STR[7], 0) ;
+	If $mciError[0] <> 0 Then _mciSendUtterError($mciError[0])
+	$UTTER_MIC_STR[1] = "mywave"
+	$UTTER_MIC_STR[3] = "level"
+	$UTTER_MIC_STR[4] = ""
+	$UTTER_MIC_STR[5] = StringFormat("status %s %s %s", $UTTER_MIC_STR[1], $UTTER_MIC_STR[3], $UTTER_MIC_STR[4]) ;
+	$mciError = _mciSendUtter($UTTER_MIC_STR[5], $UTTER_MIC_STR[6], $UTTER_MIC_STR[7], 0) ;
+	If $mciError[0] <> 0 Then _mciSendUtterError($mciError[0])
+	Return $mciError[2]
+EndFunc   ;==>_Utter_MIC_GetLevel
 #EndRegion :User-Functions
 
 ;#INTERNAL FUNCTION# ;===============================================================================
@@ -748,7 +762,7 @@ EndFunc
 ;============================================================================================
 #Region :Internal Functions Start
 Func Readcmd($cmdin)
-	$cmd = Run(@ComSpec & " /c " & $cmdin, @ScriptDir, @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
+	Local $cmd = Run(@ComSpec & " /c " & $cmdin, @ScriptDir, @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
 	Local $sLine, $sOutput
 	While 1
 		$sLine = StdoutRead($cmd)
@@ -759,127 +773,135 @@ Func Readcmd($cmdin)
 EndFunc   ;==>Readcmd
 
 Func _Whoami_CurrentId()
-	$read = Readcmd("WHOAMI /USER /FO CSV")
-	$string = _StringBetween($read, '"' & @ComputerName & "\" & @UserName & '","', '"' & @CRLF)
+	Local $read = Readcmd("WHOAMI /USER /FO CSV")
+	Local $string = _StringBetween($read, '"' & @ComputerName & "\" & @UserName & '","', '"' & @CRLF)
 	Return $string[0]
 EndFunc   ;==>_Whoami_CurrentId
 
 Func _nullifyvariable()
- $UTTER_SPEECH_RECOGNIZE = ""
- $UTTER_SPEECH_VAR = ""
- $UTTER_SPEECH_ERROR = ""
- $UTTER_SPEECH_RECOSTATE = ""
- $UTTER_SPEECH_RESPONSE = ""
- $UTTER_SPEECH_FUNC = ""
- $UTTER_SPEECH_PASS = ""
-EndFunc
+	$UTTER_SPEECH_RECOGNIZE = ""
+	$UTTER_SPEECH_VAR = ""
+	$UTTER_SPEECH_ERROR = ""
+	$UTTER_SPEECH_RECOSTATE = ""
+	$UTTER_SPEECH_RESPONSE = ""
+	$UTTER_SPEECH_FUNC = ""
+	$UTTER_SPEECH_PASS = ""
+EndFunc   ;==>_nullifyvariable
 
 Func _getpath($file)
-$spk = StringRegExp($file, "^\h*((?:\\\\\?\\)*(\\\\[^\?\/\\]+|[A-Za-z]:)?(.*[\/\\]\h*)?((?:[^\.\/\\]|(?(?=\.[^\/\\]*\.)\.))*)?([^\/\\]*))$", 1)
-Return $spk[1] &$spk[2] &$spk[3]
-EndFunc
+	Local $spk = StringRegExp($file, "^\h*((?:\\\\\?\\)*(\\\\[^\?\/\\]+|[A-Za-z]:)?(.*[\/\\]\h*)?((?:[^\.\/\\]|(?(?=\.[^\/\\]*\.)\.))*)?([^\/\\]*))$", 1)
+	Return $spk[1] & $spk[2] & $spk[3]
+EndFunc   ;==>_getpath
 
 Func _Fetchextension($file)
-$aArray = StringRegExp($file, "^\h*((?:\\\\\?\\)*(\\\\[^\?\/\\]+|[A-Za-z]:)?(.*[\/\\]\h*)?((?:[^\.\/\\]|(?(?=\.[^\/\\]*\.)\.))*)?([^\/\\]*))$", 1)
-If $aArray[4] = ".wav" Then
-   Return 0
-ElseIf $aArray[4] = ".mp3" Then
-   Return 2
-Else
-   Return 1
-EndIf
-EndFunc
+	Local $aArray = StringRegExp($file, "^\h*((?:\\\\\?\\)*(\\\\[^\?\/\\]+|[A-Za-z]:)?(.*[\/\\]\h*)?((?:[^\.\/\\]|(?(?=\.[^\/\\]*\.)\.))*)?([^\/\\]*))$", 1)
+	If $aArray[4] = ".wav" Then
+		Return 0
+	ElseIf $aArray[4] = ".mp3" Then
+		Return 2
+	Else
+		Return 1
+	EndIf
+EndFunc   ;==>_Fetchextension
 
 Func _checkgrammar($atb)
-$char = Opt("GUIDataSeparatorChar")
-If IsArray($atb) Then
-   Return $atb
-ElseIf StringInStr ($atb,$char) Then
-   $split = StringSplit ($atb,$char,2)
-   Return $split
-Else
-   Local $ark[1]
-   $ark[0] = $atb
-   Return $ark
-EndIf
-EndFunc
+	Local $char = Opt("GUIDataSeparatorChar")
+	If IsArray($atb) Then
+		Return $atb
+	ElseIf StringInStr($atb, $char) Then
+		Local $split = StringSplit($atb, $char, 2)
+		Return $split
+	Else
+		Local $ark[1]
+		$ark[0] = $atb
+		Return $ark
+	EndIf
+EndFunc   ;==>_checkgrammar
 
 Func _CheckObject($ark)
-ObjName ($ark[0])
-If @error Then MsgBox ("","Utter","Handler not valid")
-EndFunc
+	ObjName($ark[0])
+	If @error Then MsgBox("", "Utter", "Handler not valid")
+EndFunc   ;==>_CheckObject
 
 Func MyErrFunc()
-Msgbox(0,"Utter COM Test","We intercepted a COM Error !"      & @CRLF  & @CRLF & _
-             "err.description is: "    & @TAB & $oMyError.description    & @CRLF & _
-             "err.windescription:"     & @TAB & $oMyError.windescription & @CRLF & _
-             "err.number is: "         & @TAB & hex($oMyError.number,8)  & @CRLF & _
-             "err.lastdllerror is: "   & @TAB & $oMyError.lastdllerror   & @CRLF & _
-             "err.scriptline is: "     & @TAB & $oMyError.scriptline     & @CRLF & _
-             "err.source is: "         & @TAB & $oMyError.source         & @CRLF & _
-             "err.helpfile is: "       & @TAB & $oMyError.helpfile       & @CRLF & _
-             "err.helpcontext is: "    & @TAB & $oMyError.helpcontext _
-            )
-    Local $err = $oMyError.number
-    If $err = 0 Then $err = -1
-    $g_eventerror = $err  ; to check for after this function returns
-Endfunc
+	MsgBox(0, "Utter COM Test", "We intercepted a COM Error !" & @CRLF & @CRLF & _
+			"err.description is: " & @TAB & $oMyError.description & @CRLF & _
+			"err.windescription:" & @TAB & $oMyError.windescription & @CRLF & _
+			"err.number is: " & @TAB & Hex($oMyError.number, 8) & @CRLF & _
+			"err.lastdllerror is: " & @TAB & $oMyError.lastdllerror & @CRLF & _
+			"err.scriptline is: " & @TAB & $oMyError.scriptline & @CRLF & _
+			"err.source is: " & @TAB & $oMyError.source & @CRLF & _
+			"err.helpfile is: " & @TAB & $oMyError.helpfile & @CRLF & _
+			"err.helpcontext is: " & @TAB & $oMyError.helpcontext _
+			)
+	Local $err = $oMyError.number
+	If $err = 0 Then $err = -1
+;~ 	Local $g_eventerror = $err  ; to check for after this function returns
+EndFunc   ;==>MyErrFunc
 
 Func SpRecEvent_SoundStart($StreamNumber, $StreamPosition)
-    $UTTER_SPEECH_RESPONSE = 0
-EndFunc
+	#forceref $StreamNumber, $StreamPosition
+	$UTTER_SPEECH_RESPONSE = 0
+EndFunc   ;==>SpRecEvent_SoundStart
 
 Func SpRecEvent_SoundEnd($StreamNumber, $StreamPosition)
-    $UTTER_SPEECH_RESPONSE = 1
-EndFunc
+	#forceref $StreamNumber, $StreamPosition
+	$UTTER_SPEECH_RESPONSE = 1
+EndFunc   ;==>SpRecEvent_SoundEnd
 
 Func RecoContext_SoundStart($StreamNumber, $StreamPosition)
-    $UTTER_SPEECH_RESPONSE = 0
-EndFunc
+	#forceref $StreamNumber, $StreamPosition
+	$UTTER_SPEECH_RESPONSE = 0
+EndFunc   ;==>RecoContext_SoundStart
 
 Func RecoContext_SoundEnd($StreamNumber, $StreamPosition)
-    $UTTER_SPEECH_RESPONSE = 1
-EndFunc
+	#forceref $StreamNumber, $StreamPosition
+	$UTTER_SPEECH_RESPONSE = 1
+EndFunc   ;==>RecoContext_SoundEnd
 
 Func RecoContext_Recognition($iStreamNumber, $vStreamPosition, $iRecognitionType, $iResult)
-    $said = $iResult.PhraseInfo.GetText()
-   If $UTTER_SPEECH_PASS = 0 Then
-	If $UTTER_SPEECH_DEBUG Then ConsoleWrite( @CRLF &"--UTTER NOTIFIED:" &$said)
-    If Not $UTTER_SPEECH_FUNC = "" Then
-	   Call ($UTTER_SPEECH_FUNC,$said)
-    EndIf
-	If $UTTER_SPEECH_VAR = $UTTER_SPEECH_RECOGNIZE Then
-	   $UTTER_SPEECH_RECOSTATE = 0
-    Else
-	   $UTTER_SPEECH_RECOSTATE = 1
-    EndIf
-	$UTTER_SPEECH_RECOGNIZE = $said
- Else
-	If $UTTER_SPEECH_DEBUG Then ConsoleWrite( @CRLF &"--UTTER PAUSED RECOGNITION STATE")
-   EndIf
-EndFunc
+	#forceref $iStreamNumber, $vStreamPosition, $iRecognitionType
+	Local $said = $iResult.PhraseInfo.GetText()
+	If $UTTER_SPEECH_PASS = 0 Then
+		If $UTTER_SPEECH_DEBUG Then ConsoleWrite(@CRLF & "--UTTER NOTIFIED:" & $said)
+		If Not $UTTER_SPEECH_FUNC = "" Then
+			Call($UTTER_SPEECH_FUNC, $said)
+		EndIf
+		If $UTTER_SPEECH_VAR = $UTTER_SPEECH_RECOGNIZE Then
+			$UTTER_SPEECH_RECOSTATE = 0
+		Else
+			$UTTER_SPEECH_RECOSTATE = 1
+		EndIf
+		$UTTER_SPEECH_RECOGNIZE = $said
+	Else
+		If $UTTER_SPEECH_DEBUG Then ConsoleWrite(@CRLF & "--UTTER PAUSED RECOGNITION STATE")
+	EndIf
+EndFunc   ;==>RecoContext_Recognition
 
 Func SpRecEvent_Recognition($StreamNumber, $StreamPosition, $RecognitionType, $iResult)
-    $said = $iResult.PhraseInfo.GetText()
+	#forceref $StreamNumber, $StreamPosition, $RecognitionType
+	Local $said = $iResult.PhraseInfo.GetText()
 	If $UTTER_SPEECH_PASS = 0 Then
-	If Not $UTTER_SPEECH_FUNC = "" Then
-	   Call ($UTTER_SPEECH_FUNC,$said)
-    EndIf
-    If $UTTER_SPEECH_DEBUG Then ConsoleWrite( @CRLF &"--UTTER NOTIFIED:" &$said)
-	$UTTER_SPEECH_VAR = $said
-	$UTTER_SPEECH_RECOGNIZE = $said
-	 Else
-	If $UTTER_SPEECH_DEBUG Then ConsoleWrite( @CRLF &"--UTTER PAUSED RECOGNITION STATE")
-   EndIf
-EndFunc
+		If Not $UTTER_SPEECH_FUNC = "" Then
+			Call($UTTER_SPEECH_FUNC, $said)
+		EndIf
+		If $UTTER_SPEECH_DEBUG Then ConsoleWrite(@CRLF & "--UTTER NOTIFIED:" & $said)
+		$UTTER_SPEECH_VAR = $said
+		$UTTER_SPEECH_RECOGNIZE = $said
+	Else
+		If $UTTER_SPEECH_DEBUG Then ConsoleWrite(@CRLF & "--UTTER PAUSED RECOGNITION STATE")
+	EndIf
+EndFunc   ;==>SpRecEvent_Recognition
 
 Func _mciSendUtter($lpszCommand, $lpszReturnString, $cchReturn, $hwndCallback)
+	#forceref $hwndCallback
 	Return DllCall("winmm.dll", "long", "mciSendStringA", "str", $lpszCommand, "str", $lpszReturnString, "long", $cchReturn, "long", 0)
 EndFunc   ;==>_mciSendUtter
 
 Func _mciSendUtterError($mciError)
-	Dim $errStr ; Error message
-	$errStr = _StringRepeat(" ", 100) ; Reserve some space for the error message
-	$Result = DllCall("winmm.dll", "long", "mciGetErrorStringA", "long", $mciError, "string", $errStr, "long", StringLen($errStr))
+	; Error message
+	Local $errStr = _StringRepeat(" ", 100) ; Reserve some space for the error message
+	Local $Result = DllCall("winmm.dll", "long", "mciGetErrorStringA", "long", $mciError, "string", $errStr, "long", StringLen($errStr))
+	#forceref $Result
 EndFunc   ;==>_mciSendUtterError
-#EndRegion :Internal Functions End
+#EndRegion :Internal Functions Start
