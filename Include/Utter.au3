@@ -93,7 +93,7 @@ Any update will be notified and released on the forum.
 Version .........: 3.0.0.1
 Author ..........: SuryaSaradhi.B
 Modified ........: mLipok
-Modified ........: 24/01/2021
+Modified ........: 21/11/2021
 #ce --------------------------------------------------------------------------
 
 ; Script Start - Add your code below here
@@ -152,11 +152,15 @@ Global $i_ObjInitializedm
 ;============================================================================================
 Func _Utter_Speech_StartEngine()
 	$h_Context = ObjCreate("SAPI.SpInProcRecoContext")
+	If @error Then Return SetError(@error, @extended, $h_Context)
+
 	Local $comer = @error
 	$h_Recognizer = $h_Context.Recognizer
 	;Global $h_Grammar = $h_Context.CreateGrammar(1)
 	$oRecoContext = $h_Context ;ObjCreate('SAPI.SpSharedRecoContext')
 	$oVBS = ObjCreate("ScriptControl")
+	If @error Then Return SetError(@error, @extended, $oVBS)
+
 	$oVBS.Language = "VBScript"
 	Local $oNothing = $oVBS.Eval("Nothing")
 	$oRecoContext.CreateGrammar(0)
@@ -240,8 +244,12 @@ EndFunc   ;==>_Utter_Speech_CreateGrammar
 Func _Utter_Speech_CreateTokens(ByRef $ark)
 	Local $h_Recognizer = $ark[1]
 	Local $h_Category = ObjCreate("SAPI.SpObjectTokenCategory")
+	If @error Then Return SetError(@error, @extended, $h_Category)
+
 	$h_Category.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
 	Local $h_Token = ObjCreate("SAPI.SpObjectToken")
+	If @error Then Return SetError(@error, @extended, $h_Token)
+
 	$h_Token.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
 	$h_Recognizer.AudioInput = $h_Token
 	Local $array[2]
@@ -374,6 +382,8 @@ Func _Utter_Speech_CreateFreeGrammar($delay = 3000, $func = "")
 	_nullifyvariable()
 	If Not $func = "" Then $UTTER_SPEECH_FUNC = $func
 	$h_Contextm = ObjCreate("SAPI.SpInProcRecoContext")
+	If @error Then Return SetError(@error, @extended, $h_Contextm)
+
 	$h_Recognizerm = $h_Contextm.Recognizer
 	$h_Grammarm = $h_Contextm.CreateGrammar(1)
 	$h_Grammarm.Dictationload
@@ -381,8 +391,12 @@ Func _Utter_Speech_CreateFreeGrammar($delay = 3000, $func = "")
 
 	;Create a token for the default audio input device and set it
 	$h_Categorym = ObjCreate("SAPI.SpObjectTokenCategory")
+	If @error Then Return SetError(@error, @extended, $h_Categorym)
+
 	$h_Categorym.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
 	$h_Tokenm = ObjCreate("SAPI.SpObjectToken")
+	If @error Then Return SetError(@error, @extended, $h_Tokenm)
+
 	$h_Tokenm.SetId("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\AudioInput\TokenEnums\MMAudioIn\")
 	$h_Recognizerm.AudioInput = $h_Tokenm
 
@@ -648,6 +662,8 @@ Func _Utter_Voice_Transcribe(ByRef $ark, $file, $txt, $comp = 1, $lame = "")
 	Local $ext = _Fetchextension($file)
 	If $ext = 0 Or $ext = 2 Then
 		Local $oStream = ObjCreate("SAPI.SpFileStream")
+		If @error Then Return SetError(@error, @extended, $oStream)
+
 		$ark.AllowAudioOutputFormatChangesOnNextSet = True
 		$oStream.Format.Type = $SAFT48kHz16BitMono
 		Local $mh = ""
